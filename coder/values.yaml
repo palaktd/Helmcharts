@@ -1,0 +1,117 @@
+coder:
+  namespace: app-name
+  replicaCount: 2
+  env:
+    - name: CONNECTION_URL
+      valueFrom:
+        secretKeyRef:
+          name: db-url
+          key: CONNECTION_URL
+    - name: ACCESS_URL
+      value: https://coder-test.com
+
+  image:
+    repo: ghcr.io/coder/coder
+    tag: v2.14.3
+    pullPolicy: Always
+    pullSecrets: []
+  annotations: {}
+  labels: {}
+  lifecycle: {}
+  podAnnotations: {}
+  podLabels: {}
+  tolerations:
+    - key: nodegroup/namespace
+      operator: equals
+      value: true
+      effect: NoExecute
+  nodeSelector:
+    nodegroup/namespace: "true"
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    readOnlyRootFilesystem: null
+    seccompProfile:
+      type: RuntimeDefault
+    allowPrivilegeEscalation: false
+  volumes:
+    - name: oidc-creds
+      secret:
+        secretName: oidc-creds
+    - name: db-url
+      secret:
+        secretName: db-url
+  volumeMounts:
+    - name: oidc-creds
+      readOnly: true
+      mountPath: /mnt/oidc-creds
+    - name: db-url
+      readOnly: true
+      mountPath: /mnt/db-url
+  resources:
+    limits:
+      cpu: 2
+      memory: 2861Mi
+    requests:
+      cpu: 1
+      memory: 1907Mi
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - podAffinityTerm:
+            labelSelector:
+              matchExpressions:
+                - key: app.kubernetes.io/instance
+                  operator: In
+                  values:
+                    - coder
+            topologyKey: kubernetes.io/hostname
+          weight: 1
+  # coder.service -- The Service object to expose for Coder.
+  service:
+    enable: true
+    type: NodePort
+    sessionAffinity: None
+    externalTrafficPolicy: Cluster
+    loadBalancerIP: ""
+    annotations: {}
+    httpNodePort: 30120
+    containerPort: 8080
+
+  #coder.tagetgroupbinding -- To bind the external ALB with the EKS cluster.
+  targetgroupbinding:
+    enable: true
+    service: coder
+    targetGroupARN: {}
+    targetType: instance
+
+  #coder.externalsecret -- To use secret from AWS secret manager into kubernetes cluster
+  externalsecret:
+    enable: true
+    secretStoreRef: cdw
+    targetName: oidc-creds
+    secretName: oidc-creds
+    deletionPolicy: Retain
+    refreshInterval: 5m
+
+
+  #coder.containerspec -- To provide container specification for coder app
+  containersspec:
+    restartPolicy: Always
+    terminationGracePeriodSeconds: 60
+    probePath: /healthz
+
+  #Service Account details
+  serviceAccount:
+    enable: true
+    enableDeployments: true
+    annotations: {}
+    name: coder
+
+  # AWS Secret Store
+  secretStore:
+    enable: true
+    region: eu-central-1
+    role: eks-cluster-irsa-sa-irsa
+  

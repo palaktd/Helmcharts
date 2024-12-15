@@ -1,0 +1,22 @@
+apiVersion: v2
+name: app-name
+description: Deploy your container based application in k8s using Helm charts
+home: https://github.com/coder/coder
+
+type: application
+
+# This is the chart version and should be increamented when you are making changes to chart and
+# its templates including the app version
+version: 0.1.0
+# This is the version number of application being deployed. This version number should be increamented
+# each time you make changes to the application.
+appVersion: 0.1.0
+
+kubeVersion: ">= 1.19.0-0"
+
+keywords:
+  - app-name
+  - terraform
+maintainers:
+  - name: Palak Tiwari
+    email: palaktiwari2805@gmail.com
