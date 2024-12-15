@@ -6,7 +6,7 @@ metadata:
   name: coder
   namespace: {{ .Values.coder.namespace }}
   labels:
-    {{- include "coder.labels" . | nindent 4 }}
+    {{- include "app.labels" . | nindent 4 }}
   annotations:
     {{- toYaml .Values.coder.service.annotations | nindent 4 }}
 spec:
@@ -19,5 +19,5 @@ spec:
       protocol: TCP
       nodePort: {{ .Values.coder.service.httpNodePort }}
   selector:
-    {{- include "coder.selectorLabels" . | nindent 4 }}
+    {{- include "app.selectorLabels" . | nindent 4 }}
 {{- end }}
