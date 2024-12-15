@@ -1,48 +1,18 @@
 coder:
-  namespace: cdw
-  replicaCount: 1
-  workspaceProxy: false
+  namespace: app-name
+  replicaCount: 2
   env:
-    - name: CODER_PG_CONNECTION_URL
+    - name: CONNECTION_URL
       valueFrom:
         secretKeyRef:
-          name: cdw-coder-db-url
-          key: CODER_PG_CONNECTION_URL
-    - name: CODER_ACCESS_URL
-      value: https://cdw.swf-dev.i.mercedes-benz.com
-    - name: CODER_WILDCARD_ACCESS_URL
-      value: "*.i.mercedes-benz.com"
-    - name: CODER_HTTP_ADDRESS
-      value: 0.0.0.0:30120
-    - name: CODER_PROVISIONER_DAEMONS
-      value: 50
-    - name: CODER_PROMETHEUS_ENABLE
-      value: true
-    - name: CODER_SESSION_DURATION
-      value: 12h
-    - name: CODER_OIDC_ISSUER_URL
-      value: https://sso-int.mercedes-benz.com
-    - name: CODER_OIDC_EMAIL_DOMAIN
-      value: mercedes-benz.com
-    - name: PROD_CODER_OIDC_CLIENT_ID
-      valueFrom:
-        secretKeyRef:
-          name: cdw-oidc-creds
-          key: PROD_CODER_OIDC_CLIENT_ID
-    - name: PROD_CODER_OIDC_CLIENT_SECRET
-      valueFrom:
-        secretKeyRef:
-          name: cdw-oidc-creds
-          key: PROD_CODER_OIDC_CLIENT_SECRET
-    - name: CODER_OIDC_SIGN_IN_TEXT
-      value: CDW Single Sign On
+          name: db-url
+          key: CONNECTION_URL
+    - name: ACCESS_URL
+      value: https://coder-test.com
 
-  envUseClusterAccessURL: true
-
-  # coder.image -- The image to use for Coder.
   image:
-    repo: 154453013990.dkr.ecr.eu-central-1.amazonaws.com/coder/coder
-    tag: v2.13.0
+    repo: ghcr.io/coder/coder
+    tag: v2.14.3
     pullPolicy: Always
     pullSecrets: []
   annotations: {}
@@ -50,13 +20,13 @@ coder:
   lifecycle: {}
   podAnnotations: {}
   podLabels: {}
-  # tolerations:
-  #   - key: nodegroup/cdw
-  #     operator: equals
-  #     value: true
-  #     effect: NoExecute
-  # nodeSelector:
-  #   nodegroup/cdw: "true"
+  tolerations:
+    - key: nodegroup/namespace
+      operator: equals
+      value: true
+      effect: NoExecute
+  nodeSelector:
+    nodegroup/namespace: "true"
   securityContext:
     runAsNonRoot: true
     runAsUser: 1000
@@ -66,19 +36,19 @@ coder:
       type: RuntimeDefault
     allowPrivilegeEscalation: false
   volumes:
-    - name: cdw-oidc-creds
+    - name: oidc-creds
       secret:
-        secretName: cdw-oidc-creds
-    - name: cdw-coder-db-url
+        secretName: oidc-creds
+    - name: db-url
       secret:
-        secretName: cdw-coder-db-url
+        secretName: db-url
   volumeMounts:
-    - name: cdw-oidc-creds
+    - name: oidc-creds
       readOnly: true
-      mountPath: /mnt/cdw-oidc-creds
-    - name: cdw-coder-db-url
+      mountPath: /mnt/oidc-creds
+    - name: db-url
       readOnly: true
-      mountPath: /mnt/cdw-coder-db-url
+      mountPath: /mnt/db-url
   resources:
     limits:
       cpu: 2
@@ -120,19 +90,11 @@ coder:
   externalsecret:
     enable: true
     secretStoreRef: cdw
-    targetName: cdw-oidc-creds
+    targetName: oidc-creds
     secretName: oidc-creds
     deletionPolicy: Retain
     refreshInterval: 5m
 
-  #RDS DB URL details. To be used for external secret creation.
-  dbexternalsecret:
-    enable: true
-    secretStoreRef: cdw
-    targetName: cdw-coder-db-url
-    secretName: cdw-coder-db-url
-    deletionPolicy: Retain
-    refreshInterval: 5m
 
   #coder.containerspec -- To provide container specification for coder app
   containersspec:
@@ -146,3 +108,10 @@ coder:
     enableDeployments: true
     annotations: {}
     name: coder
+
+  # AWS Secret Store
+  secretStore:
+    enable: true
+    region: eu-central-1
+    role: eks-cluster-irsa-sa-irsa
+  
