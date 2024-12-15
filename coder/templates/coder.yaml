@@ -3,21 +3,20 @@ kind: Deployment
 metadata:
   name: {{ .Chart.Name }}
   labels:
-    {{- include "coder.labels" . | nindent 4 }}
+    {{- include "app.labels" . | nindent 4 }}
   spec:
     replicas: {{ .Values.coder.replicaCount }}  
     selector:
       matchLabels:
-        {{- include "coder.selectorLabels" . | nindent 8 }}
+        {{- include "app.selectorLabels" . | nindent 8 }}
     template:
       metadata:
         labels:
-          {{- include "coder.labels" . | nindent 10 }}
+          {{- include "app.labels" . | nindent 10 }}
         annotations:
           {{- toYaml .Values.coder.podAnnotations | nindent 10 }}
       spec:
         serviceAccountName: {{ .Values.coder.serviceAccount.name | quote }}
-        # runtimeClassName: {{ .Values.coder.runtimeClassName | quote }}
         restartPolicy: {{ .Values.coder.containersspec.restartPolicy | quote }}
         terminationGracePeriodSeconds: {{ .Values.coder.containersspec.terminationGracePeriodSeconds }}
         {{- with .Values.coder.affinity }}
@@ -25,9 +24,9 @@ metadata:
         {{- toYaml . | nindent 8 }}
         {{- end }}
         {{- with .Values.coder.nodeSelector }}
-        # nodeSelector:
-        # {{- toYaml . | nindent 10 }}
-        # {{- end }}
+        nodeSelector:
+        {{- toYaml . | nindent 10 }}
+        {{- end }}
         containers:
           - name: {{ .Chart.Name }}
             image: {{ .Values.coder.image.repo }}:{{ .Values.coder.image.tag | default .Chart.AppVersion }}
